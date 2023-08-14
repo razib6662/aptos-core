@@ -204,7 +204,7 @@ impl IndexerAsyncV2 {
     }
 
     pub fn get_table_info(&self, handle: TableHandle) -> Result<Option<TableInfo>> {
-        self.db.get::<TableInfoSchema>(&handle)
+        self.db.get::<TableInfoSchema>(&handle).map_err(Into::into)
     }
 
     pub fn get_table_info_with_retry(&self, handle: TableHandle) -> Result<Option<TableInfo>> {

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{error::Error, metrics::increment_network_frame_overflow};
-use anyhow;
 use aptos_config::config::StorageServiceConfig;
 use aptos_logger::debug;
 use aptos_storage_interface::DbReader;
@@ -12,7 +11,7 @@ use aptos_storage_service_types::responses::{
 use aptos_types::{
     epoch_change::EpochChangeProof,
     ledger_info::LedgerInfoWithSignatures,
-    state_store::state_value::StateValueChunkWithProof,
+    state_store::{errors::AptosDbError, state_value::StateValueChunkWithProof},
     transaction::{TransactionListWithProof, TransactionOutputListWithProof, Version},
 };
 use serde::Serialize;
@@ -511,7 +510,7 @@ macro_rules! timed_read {
             $(#[$($attr)*])*
             fn $name(&self, $($arg: $ty),*) -> $return_type {
                 let read_operation = || {
-                    self.storage.$name($($arg),*).map_err(|error| error.into())
+                    self.storage.$name($($arg),*).map_err(|e| e.into())
                 };
                 let result = crate::utils::execute_and_time_duration(
                     &crate::metrics::STORAGE_DB_READ_LATENCY,
@@ -520,7 +519,7 @@ macro_rules! timed_read {
                     read_operation,
                     None,
                 );
-                result.map_err(|error| error.into())
+                result.map_err(|e| AptosDbError::Other(e.to_string()))
             }
         )+
     };
@@ -539,16 +538,17 @@ impl TimedStorageReader {
 }
 
 impl DbReader for TimedStorageReader {
+
     timed_read!(
-        fn is_state_merkle_pruner_enabled(&self) -> anyhow::Result<bool>;
+        fn is_state_merkle_pruner_enabled(&self) -> aptos_storage_interface::Result<bool>;
 
-        fn get_epoch_snapshot_prune_window(&self) -> anyhow::Result<usize>;
+        fn get_epoch_snapshot_prune_window(&self) -> aptos_storage_interface::Result<usize>;
 
-        fn get_first_txn_version(&self) -> anyhow::Result<Option<Version>>;
+        fn get_first_txn_version(&self) -> aptos_storage_interface::Result<Option<Version>>;
 
-        fn get_first_write_set_version(&self) -> anyhow::Result<Option<Version>>;
+        fn get_first_write_set_version(&self) -> aptos_storage_interface::Result<Option<Version>>;
 
-        fn get_latest_ledger_info(&self) -> anyhow::Result<LedgerInfoWithSignatures>;
+        fn get_latest_ledger_info(&self) -> aptos_storage_interface::Result<LedgerInfoWithSignatures>;
 
         fn get_transactions(
             &self,
@@ -556,29 +556,29 @@ impl DbReader for TimedStorageReader {
             batch_size: u64,
             ledger_version: Version,
             fetch_events: bool,
-        ) -> anyhow::Result<TransactionListWithProof>;
+        ) -> aptos_storage_interface::Result<TransactionListWithProof>;
 
         fn get_epoch_ending_ledger_infos(
             &self,
             start_epoch: u64,
             end_epoch: u64,
-        ) -> anyhow::Result<EpochChangeProof>;
+        ) -> aptos_storage_interface::Result<EpochChangeProof>;
 
         fn get_transaction_outputs(
             &self,
             start_version: Version,
             limit: u64,
             ledger_version: Version,
-        ) -> anyhow::Result<TransactionOutputListWithProof>;
+        ) -> aptos_storage_interface::Result<TransactionOutputListWithProof>;
 
-        fn get_state_leaf_count(&self, version: Version) -> anyhow::Result<usize>;
+        fn get_state_leaf_count(&self, version: Version) -> aptos_storage_interface::Result<usize>;
 
         fn get_state_value_chunk_with_proof(
             &self,
             version: Version,
             start_idx: usize,
             chunk_size: usize,
-        ) -> anyhow::Result<StateValueChunkWithProof>;
+        ) -> aptos_storage_interface::Result<StateValueChunkWithProof>;
     );
 }
 

@@ -23,16 +23,19 @@ pub struct DBDebuggerInterface(Arc<dyn DbReader>);
 
 impl DBDebuggerInterface {
     pub fn open<P: AsRef<Path> + Clone>(db_root_path: P) -> Result<Self> {
-        Ok(Self(Arc::new(AptosDB::open(
-            StorageDirPaths::from_path(db_root_path),
-            true,
-            NO_OP_STORAGE_PRUNER_CONFIG,
-            RocksdbConfigs::default(),
-            false, /* indexer */
-            BUFFERED_STATE_TARGET_ITEMS,
-            DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
-            false, /* indexer async v2 */
-        )?)))
+        Ok(Self(Arc::new(
+            AptosDB::open(
+                StorageDirPaths::from_path(db_root_path),
+                true,
+                NO_OP_STORAGE_PRUNER_CONFIG,
+                RocksdbConfigs::default(),
+                false, /* indexer */
+                BUFFERED_STATE_TARGET_ITEMS,
+                DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
+                false, /* indexer async v2 */
+            )
+            .map_err(Into::into)?,
+        )))
     }
 }
 
@@ -48,8 +51,9 @@ impl AptosValidatorInterface for DBDebuggerInterface {
             .0
             .get_prefixed_state_value_iterator(&key_prefix, None, version)?;
         let kvs = iter
+            .map(|res| res.map_err(Into::into))
             .by_ref()
-            .take(MAX_REQUEST_LIMIT as usize)
+            .take(MAX_REQUEST_LIMIT)
             .collect::<Result<_>>()?;
         if iter.next().is_some() {
             bail!(
@@ -65,7 +69,9 @@ impl AptosValidatorInterface for DBDebuggerInterface {
         state_key: &StateKey,
         version: Version,
     ) -> Result<Option<StateValue>> {
-        self.0.get_state_value_by_version(state_key, version)
+        self.0
+            .get_state_value_by_version(state_key, version)
+            .map_err(Into::into)
     }
 
     async fn get_committed_transactions(
@@ -75,7 +81,9 @@ impl AptosValidatorInterface for DBDebuggerInterface {
     ) -> Result<(Vec<Transaction>, Vec<TransactionInfo>)> {
         let txn_iter = self.0.get_transaction_iterator(start, limit)?;
         let txn_info_iter = self.0.get_transaction_info_iterator(start, limit)?;
-        let txns = txn_iter.collect::<Result<Vec<_>>>()?;
+        let txns = txn_iter
+            .map(|res| res.map_err(Into::into))
+            .collect::<Result<Vec<_>>>()?;
         let txn_infos = txn_info_iter.collect::<Result<Vec<_>>>()?;
         ensure!(txns.len() == txn_infos.len());
         Ok((txns, txn_infos))
@@ -101,7 +109,7 @@ impl AptosValidatorInterface for DBDebuggerInterface {
     }
 
     async fn get_latest_version(&self) -> Result<Version> {
-        self.0.get_latest_version()
+        self.0.get_latest_version().map_err(Into::into)
     }
 
     async fn get_version_by_account_sequence(
@@ -112,7 +120,8 @@ impl AptosValidatorInterface for DBDebuggerInterface {
         let ledger_version = self.get_latest_version().await?;
         Ok(self
             .0
-            .get_account_transaction(account, seq, false, ledger_version)?
+            .get_account_transaction(account, seq, false, ledger_version)
+            .map_err(Into::into)?
             .map(|info| info.version))
     }
 }
