@@ -256,17 +256,19 @@ impl<T: Transaction, O: TransactionOutput<Txn = T>, E: Debug + Send + Clone>
     pub(crate) fn resource_write_set(
         &self,
         txn_idx: TxnIndex,
-    ) -> Option<BTreeMap<T::Key, (T::Value, Option<Arc<MoveTypeLayout>>)>> {
+    ) -> BTreeMap<T::Key, (T::Value, Option<Arc<MoveTypeLayout>>)> {
         self.outputs[txn_idx as usize]
             .load_full()
-            .and_then(|txn_output| match &txn_output.output_status {
-                ExecutionStatus::Success(t) | ExecutionStatus::SkipRest(t) => {
-                    Some(t.resource_write_set())
-                },
-                ExecutionStatus::Abort(_)
-                | ExecutionStatus::DirectWriteSetTransactionNotCapableError
-                | ExecutionStatus::SpeculativeExecutionAbortError(_)
-                | ExecutionStatus::DelayedFieldsCodeInvariantError(_) => None,
+            .map_or(BTreeMap::new(), |txn_output| {
+                match &txn_output.output_status {
+                    ExecutionStatus::Success(t) | ExecutionStatus::SkipRest(t) => {
+                        t.resource_write_set()
+                    },
+                    ExecutionStatus::Abort(_)
+                    | ExecutionStatus::DirectWriteSetTransactionNotCapableError
+                    | ExecutionStatus::SpeculativeExecutionAbortError(_)
+                    | ExecutionStatus::DelayedFieldsCodeInvariantError(_) => BTreeMap::new(),
+                }
             })
     }
 
@@ -291,36 +293,40 @@ impl<T: Transaction, O: TransactionOutput<Txn = T>, E: Debug + Send + Clone>
     pub(crate) fn reads_needing_delayed_field_exchange(
         &self,
         txn_idx: TxnIndex,
-    ) -> Option<BTreeMap<T::Key, (T::Value, Arc<MoveTypeLayout>)>> {
+    ) -> BTreeMap<T::Key, (T::Value, Arc<MoveTypeLayout>)> {
         self.outputs[txn_idx as usize]
             .load()
             .as_ref()
-            .and_then(|txn_output| match &txn_output.output_status {
-                ExecutionStatus::Success(t) | ExecutionStatus::SkipRest(t) => {
-                    Some(t.reads_needing_delayed_field_exchange())
-                },
-                ExecutionStatus::Abort(_)
-                | ExecutionStatus::DirectWriteSetTransactionNotCapableError
-                | ExecutionStatus::SpeculativeExecutionAbortError(_)
-                | ExecutionStatus::DelayedFieldsCodeInvariantError(_) => None,
+            .map_or(BTreeMap::new(), |txn_output| {
+                match &txn_output.output_status {
+                    ExecutionStatus::Success(t) | ExecutionStatus::SkipRest(t) => {
+                        t.reads_needing_delayed_field_exchange()
+                    },
+                    ExecutionStatus::Abort(_)
+                    | ExecutionStatus::DirectWriteSetTransactionNotCapableError
+                    | ExecutionStatus::SpeculativeExecutionAbortError(_)
+                    | ExecutionStatus::DelayedFieldsCodeInvariantError(_) => BTreeMap::new(),
+                }
             })
     }
 
     pub(crate) fn group_reads_needing_delayed_field_exchange(
         &self,
         txn_idx: TxnIndex,
-    ) -> Option<BTreeMap<T::Key, T::Value>> {
+    ) -> BTreeMap<T::Key, T::Value> {
         self.outputs[txn_idx as usize]
             .load()
             .as_ref()
-            .and_then(|txn_output| match &txn_output.output_status {
-                ExecutionStatus::Success(t) | ExecutionStatus::SkipRest(t) => {
-                    Some(t.group_reads_needing_delayed_field_exchange())
-                },
-                ExecutionStatus::Abort(_)
-                | ExecutionStatus::DirectWriteSetTransactionNotCapableError
-                | ExecutionStatus::SpeculativeExecutionAbortError(_)
-                | ExecutionStatus::DelayedFieldsCodeInvariantError(_) => None,
+            .map_or(BTreeMap::new(), |txn_output| {
+                match &txn_output.output_status {
+                    ExecutionStatus::Success(t) | ExecutionStatus::SkipRest(t) => {
+                        t.group_reads_needing_delayed_field_exchange()
+                    },
+                    ExecutionStatus::Abort(_)
+                    | ExecutionStatus::DirectWriteSetTransactionNotCapableError
+                    | ExecutionStatus::SpeculativeExecutionAbortError(_)
+                    | ExecutionStatus::DelayedFieldsCodeInvariantError(_) => BTreeMap::new(),
+                }
             })
     }
 
@@ -339,7 +345,7 @@ impl<T: Transaction, O: TransactionOutput<Txn = T>, E: Debug + Send + Clone>
         )
     }
 
-    pub(crate) fn group_metadata_ops(&self, txn_idx: TxnIndex) -> Vec<(T::Key, T::Value)> {
+    pub(crate) fn resource_group_metadata_ops(&self, txn_idx: TxnIndex) -> Vec<(T::Key, T::Value)> {
         self.outputs[txn_idx as usize].load().as_ref().map_or(
             vec![],
             |txn_output| match &txn_output.output_status {
