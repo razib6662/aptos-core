@@ -9,6 +9,7 @@ use aptos_aggregator::{
     types::{code_invariant_error, DelayedFieldID},
 };
 use aptos_types::{
+    aggregator::PanicError,
     contract_event::ContractEvent,
     state_store::state_key::{StateKey, StateKeyInner},
     transaction::ChangeSet as StorageChangeSet,
@@ -21,6 +22,7 @@ use move_core_types::{
     value::MoveTypeLayout,
     vm_status::{err_msg, StatusCode, VMStatus},
 };
+use rand::Rng;
 use std::{
     collections::{
         btree_map::Entry::{Occupied, Vacant},
@@ -29,6 +31,35 @@ use std::{
     hash::Hash,
     sync::Arc,
 };
+
+// TODO[agg_v2]: This function is repeated in respawned_session.rs. Need to refactor.
+// Sporadically checks if the given two input type layouts match
+pub fn randomly_check_layout_matches(
+    layout_1: &Option<Arc<MoveTypeLayout>>,
+    layout_2: &Option<Arc<MoveTypeLayout>>,
+) -> Result<(), PanicError> {
+    if layout_1.is_some() != layout_2.is_some() {
+        return Err(code_invariant_error(format!(
+            "Layouts don't match when they are expected to: {:?} and {:?}",
+            layout_1, layout_2
+        )));
+    }
+    if layout_1.is_some() {
+        // Checking if 2 layouts are equal is a recursive operation and is expensive.
+        // We generally call this `randomly_check_layout_matches` function when we know
+        // that the layouts are supposed to match. As an optimization, we only randomly
+        // check if the layouts are matching.
+        let mut rng = rand::thread_rng();
+        let random_number: u32 = rng.gen_range(0, 100);
+        if random_number == 1 && layout_1 != layout_2 {
+            return Err(code_invariant_error(format!(
+                "Layouts don't match when they are expected to: {:?} and {:?}",
+                layout_1, layout_2
+            )));
+        }
+    }
+    Ok(())
+}
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 /// Describes an update to a resource group granularly, with WriteOps to affected
@@ -687,16 +718,18 @@ impl VMChangeSet {
                     // Squash entry and addtional entries if type layouts match
                     let (additional_write_op, additional_type_layout) = additional_entry;
                     let (write_op, type_layout) = entry.get_mut();
-                    if *type_layout != additional_type_layout {
-                        return Err(VMStatus::error(
-                            StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
-                            err_msg(format!(
-                                "Cannot squash two writes with different type layouts.
-                                key: {:?}, type_layout: {:?}, additional_type_layout: {:?}",
-                                key, type_layout, additional_type_layout
-                            )),
-                        ));
-                    }
+                    randomly_check_layout_matches(type_layout, &additional_type_layout).map_err(
+                        |_e| {
+                            VMStatus::error(
+                                StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
+                                err_msg(format!(
+                                    "Cannot squash two writes with different type layouts.
+                                    key: {:?}, type_layout: {:?}, additional_type_layout: {:?}",
+                                    key, type_layout, additional_type_layout
+                                )),
+                            )
+                        },
+                    )?;
                     let noop = !WriteOp::squash(write_op, additional_write_op).map_err(|e| {
                         VMStatus::error(
                             StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
