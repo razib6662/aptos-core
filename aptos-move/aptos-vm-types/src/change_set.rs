@@ -32,11 +32,10 @@ use std::{
     sync::Arc,
 };
 
-// TODO[agg_v2]: This function is repeated in respawned_session.rs. Need to refactor.
 // Sporadically checks if the given two input type layouts match
 pub fn randomly_check_layout_matches(
-    layout_1: &Option<Arc<MoveTypeLayout>>,
-    layout_2: &Option<Arc<MoveTypeLayout>>,
+    layout_1: Option<&MoveTypeLayout>,
+    layout_2: Option<&MoveTypeLayout>,
 ) -> Result<(), PanicError> {
     if layout_1.is_some() != layout_2.is_some() {
         return Err(code_invariant_error(format!(
@@ -718,18 +717,20 @@ impl VMChangeSet {
                     // Squash entry and addtional entries if type layouts match
                     let (additional_write_op, additional_type_layout) = additional_entry;
                     let (write_op, type_layout) = entry.get_mut();
-                    randomly_check_layout_matches(type_layout, &additional_type_layout).map_err(
-                        |_e| {
-                            VMStatus::error(
-                                StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
-                                err_msg(format!(
-                                    "Cannot squash two writes with different type layouts.
+                    randomly_check_layout_matches(
+                        type_layout.as_ref().map(|l| l.as_ref()),
+                        additional_type_layout.as_ref().map(|l| l.as_ref()),
+                    )
+                    .map_err(|_e| {
+                        VMStatus::error(
+                            StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
+                            err_msg(format!(
+                                "Cannot squash two writes with different type layouts.
                                     key: {:?}, type_layout: {:?}, additional_type_layout: {:?}",
-                                    key, type_layout, additional_type_layout
-                                )),
-                            )
-                        },
-                    )?;
+                                key, type_layout, additional_type_layout
+                            )),
+                        )
+                    })?;
                     let noop = !WriteOp::squash(write_op, additional_write_op).map_err(|e| {
                         VMStatus::error(
                             StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR,
