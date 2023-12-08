@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
+    chaos_schema::{
+        Chaos, ChaosConditionType, ChaosStatus, ConditionStatus, NetworkChaos, StressChaos,
+    },
     check_for_container_restart, create_k8s_client, delete_all_chaos, get_default_pfn_node_config,
     get_free_port, get_stateful_set_image, install_public_fullnode,
     node::K8sNode,
@@ -189,6 +192,74 @@ impl K8sSwarm {
         k8snode.start().await?; // actually start the node. if port-forward is enabled, this is when it gets its ephemeral port
         Ok((peer_id, k8snode))
     }
+
+    async fn ensure_chaos_experiments_active(&self) -> Result<()> {
+        let timeout_duration = Duration::from_secs(30);
+        let polling_interval = Duration::from_secs(5);
+
+        tokio::time::timeout(timeout_duration, async {
+            loop {
+                match self.are_chaos_experiments_active().await {
+                    Ok(true) => {
+                        info!("Chaos experiments are active");
+                        return Ok(());
+                    },
+                    Ok(false) => {
+                        info!("Chaos experiments are not active, retrying...");
+                    },
+                    Err(e) => {
+                        warn!(
+                            "Error while checking chaos experiments status: {}. Retrying...",
+                            e
+                        );
+                    },
+                }
+                tokio::time::sleep(polling_interval).await;
+            }
+        })
+        .await
+        .map_err(|e| {
+            anyhow!(
+                "Timed out waiting for chaos experiments to be active: {}",
+                e
+            )
+        })?
+    }
+
+    /// Checks if all chaos experiments are active
+    async fn are_chaos_experiments_active(&self) -> Result<bool> {
+        let network_chaos_api: Api<NetworkChaos> =
+            Api::namespaced(self.kube_client.clone(), &self.kube_namespace);
+        let stress_chaos_api: Api<StressChaos> =
+            Api::namespaced(self.kube_client.clone(), &self.kube_namespace);
+
+        let lp = ListParams::default();
+        let (network_chaoses, stress_chaoses) =
+            tokio::join!(network_chaos_api.list(&lp), stress_chaos_api.list(&lp));
+
+        let chaoses: Vec<Chaos> = network_chaoses?
+            .items
+            .into_iter()
+            .map(Chaos::Network)
+            .chain(stress_chaoses?.items.into_iter().map(Chaos::Stress))
+            .collect();
+
+        Ok(chaoses.iter().all(|chaos| match chaos {
+            Chaos::Network(network_chaos) => check_all_injected(&network_chaos.status),
+            Chaos::Stress(stress_chaos) => check_all_injected(&stress_chaos.status),
+        }))
+    }
+}
+
+fn check_all_injected(status: &Option<ChaosStatus>) -> bool {
+    status
+        .as_ref()
+        .and_then(|status| status.conditions.as_ref())
+        .map_or(false, |conditions| {
+            conditions.iter().any(|c| {
+                c.r#type == ChaosConditionType::AllInjected && c.status == ConditionStatus::True
+            })
+        })
 }
 
 #[async_trait::async_trait]
@@ -346,13 +417,17 @@ impl Swarm for K8sSwarm {
         "See fgi output for more information.".to_string()
     }
 
-    fn inject_chaos(&mut self, chaos: SwarmChaos) -> Result<()> {
+    async fn inject_chaos(&mut self, chaos: SwarmChaos) -> Result<()> {
         self.inject_swarm_chaos(&chaos)?;
         self.chaoses.insert(chaos);
+        self.ensure_chaos_experiments_active().await?;
+
         Ok(())
     }
 
-    fn remove_chaos(&mut self, chaos: SwarmChaos) -> Result<()> {
+    async fn remove_chaos(&mut self, chaos: SwarmChaos) -> Result<()> {
+        self.ensure_chaos_experiments_active().await?;
+
         if self.chaoses.remove(&chaos) {
             self.remove_swarm_chaos(&chaos)?;
         } else {
@@ -361,7 +436,9 @@ impl Swarm for K8sSwarm {
         Ok(())
     }
 
-    fn remove_all_chaos(&mut self) -> Result<()> {
+    async fn remove_all_chaos(&mut self) -> Result<()> {
+        self.ensure_chaos_experiments_active().await?;
+
         // try removing all existing chaoses
         for chaos in self.chaoses.clone() {
             self.remove_swarm_chaos(&chaos)?;
