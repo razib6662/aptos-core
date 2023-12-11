@@ -78,7 +78,7 @@ impl OnChainExecutionConfig {
                 block_output_limit: None,
                 conflict_penalty_window: 1,
                 include_user_txn_size_in_block_output: true,
-                add_block_limit_outcome_onchain: false,
+                add_block_limit_outcome_onchain: true,
                 use_granular_resource_group_conflicts: false,
             },
             transaction_deduper_type: TransactionDeduperType::TxnHashAndAuthenticatorV1,
