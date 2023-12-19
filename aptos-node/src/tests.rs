@@ -64,6 +64,8 @@ fn test_create_single_node_test_config() {
         r#"
         storage:
             enable_indexer: true
+            genesis_waypoint:
+                from_config: "0:6072b68a942aace147e0655c5704beaa255c84a7829baa4e72a500f1516584c4"
         indexer_grpc:
             enabled: true
             address: 0.0.0.0:50053

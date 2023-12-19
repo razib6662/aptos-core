@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    config::{config_sanitizer::ConfigSanitizer, node_config_loader::NodeType, Error, NodeConfig},
+    config::{
+        config_sanitizer::ConfigSanitizer, node_config_loader::NodeType, Error, NodeConfig,
+        WaypointConfig,
+    },
     utils,
 };
 use anyhow::{ensure, Result};
@@ -175,6 +178,8 @@ pub struct StorageConfig {
     /// If not specificed, will use `dir` as default.
     /// Only allowed when sharding is enabled.
     pub db_path_overrides: Option<DbPathConfig>,
+    /// Waypoint used during db bootstrap to verify if the genesis txn is applied correctly
+    pub genesis_waypoint: Option<WaypointConfig>,
 }
 
 pub const NO_OP_STORAGE_PRUNER_CONFIG: PrunerConfig = PrunerConfig {
@@ -324,6 +329,7 @@ impl Default for StorageConfig {
             db_path_overrides: None,
             buffered_state_target_items: BUFFERED_STATE_TARGET_ITEMS,
             max_num_nodes_per_lru_cache_shard: DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
+            genesis_waypoint: None,
         }
     }
 }
