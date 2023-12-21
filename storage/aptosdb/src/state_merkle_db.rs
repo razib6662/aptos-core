@@ -15,7 +15,6 @@ use crate::{
     utils::truncation_helper::{get_state_merkle_commit_progress, truncate_state_merkle_db_shards},
     versioned_node_cache::VersionedNodeCache,
 };
-use anyhow::{ensure, Result};
 use aptos_config::config::{RocksdbConfig, RocksdbConfigs, StorageDirPaths};
 use aptos_crypto::{hash::CryptoHash, HashValue};
 use aptos_experimental_runtimes::thread_manager::{optimal_min_len, THREAD_MANAGER};
@@ -28,7 +27,7 @@ use aptos_rocksdb_options::gen_rocksdb_options;
 use aptos_schemadb::{SchemaBatch, DB};
 #[cfg(test)]
 use aptos_scratchpad::get_state_shard_id;
-use aptos_storage_interface::{db_ensure as ensure, errors::AptosDbError};
+use aptos_storage_interface::{db_ensure as ensure, AptosDbError, Result};
 use aptos_types::{
     nibble::{nibble_path::NibblePath, ROOT_NIBBLE_HEIGHT},
     proof::{SparseMerkleProofExt, SparseMerkleRangeProof},
@@ -51,7 +50,6 @@ pub const STATE_MERKLE_METADATA_DB_NAME: &str = "state_merkle_metadata_db";
 pub(crate) type LeafNode = aptos_jellyfish_merkle::node_type::LeafNode<StateKey>;
 pub(crate) type Node = aptos_jellyfish_merkle::node_type::Node<StateKey>;
 type NodeBatch = aptos_jellyfish_merkle::NodeBatch<StateKey>;
-type Result<T, E = AptosDbError> = std::result::Result<T, E>;
 
 #[derive(Debug)]
 pub struct StateMerkleDb {

@@ -3,7 +3,6 @@
 
 use crate::{
     db::AptosDB,
-    db_ensure as ensure,
     jellyfish_merkle_node::JellyfishMerkleNodeSchema,
     schema::{
         db_metadata::{DbMetadataKey, DbMetadataSchema, DbMetadataValue},

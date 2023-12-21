@@ -9,7 +9,7 @@ use crate::{
 };
 use aptos_logger::info;
 use aptos_scratchpad::SmtAncestors;
-use aptos_storage_interface::state_delta::StateDelta;
+use aptos_storage_interface::{db_ensure as ensure, state_delta::StateDelta};
 use aptos_types::{
     state_store::{combine_sharded_state_updates, state_value::StateValue, ShardedStateUpdates},
     transaction::Version,

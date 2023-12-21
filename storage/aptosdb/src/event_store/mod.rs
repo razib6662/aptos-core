@@ -13,7 +13,6 @@ use crate::{
         event_by_key::EventByKeySchema, event_by_version::EventByVersionSchema,
     },
     utils::iterators::EventsByVersionIter,
-    Result,
 };
 use anyhow::anyhow;
 use aptos_accumulator::{HashReader, MerkleAccumulator};
@@ -22,7 +21,7 @@ use aptos_crypto::{
     HashValue,
 };
 use aptos_schemadb::{iterator::SchemaIterator, schema::ValueCodec, ReadOptions, SchemaBatch, DB};
-use aptos_storage_interface::{db_ensure as ensure, db_other_bail, errors::AptosDbError};
+use aptos_storage_interface::{db_ensure as ensure, db_other_bail, AptosDbError};
 use aptos_types::{
     account_address::AccountAddress,
     account_config::{new_block_event_key, NewBlockEvent},

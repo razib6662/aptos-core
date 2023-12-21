@@ -8,10 +8,10 @@ use crate::{
         ledger_pruner::LedgerPruner, pruner_manager::PrunerManager, pruner_utils,
         pruner_worker::PrunerWorker,
     },
-    Result,
 };
 use aptos_config::config::LedgerPrunerConfig;
 use aptos_infallible::Mutex;
+use aptos_storage_interface::Result;
 use aptos_types::transaction::{AtomicVersion, Version};
 use std::sync::{atomic::Ordering, Arc};
 

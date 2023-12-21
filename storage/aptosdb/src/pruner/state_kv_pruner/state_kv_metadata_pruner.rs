@@ -10,10 +10,10 @@ use crate::{
     },
     state_kv_db::StateKvDb,
     utils::get_progress,
-    Result,
 };
 use aptos_schemadb::{ReadOptions, SchemaBatch};
 use aptos_types::transaction::Version;
+use aptos_storage_interface::Result;
 use std::sync::Arc;
 
 pub(in crate::pruner) struct StateKvMetadataPruner {

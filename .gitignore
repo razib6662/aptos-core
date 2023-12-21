@@ -99,7 +99,7 @@ docker/compose/indexer-grpc/data-service-grpc-server.key
 **/*.rdb
 
 # VSCode settings
-.vscode/
+.vscode/*
 
 # Typescript
 *.env

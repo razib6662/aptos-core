@@ -18,7 +18,7 @@ use aptos_config::config::{RocksdbConfig, RocksdbConfigs};
 use aptos_logger::prelude::info;
 use aptos_rocksdb_options::gen_rocksdb_options;
 use aptos_schemadb::{ColumnFamilyDescriptor, ColumnFamilyName, SchemaBatch, DB};
-use aptos_storage_interface::errors::AptosDbError;
+use aptos_storage_interface::AptosDbError;
 use aptos_types::transaction::Version;
 use std::{
     path::{Path, PathBuf},

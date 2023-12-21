@@ -5,7 +5,6 @@
 use crate::{
     backup::{backup_handler::BackupHandler, restore_utils},
     common::MAX_NUM_EPOCH_ENDING_LEDGER_INFO,
-    errors::AptosDbError,
     event_store::EventStore,
     ledger_db::{LedgerDb, LedgerDbSchemaBatches},
     ledger_store::LedgerStore,
@@ -26,7 +25,6 @@ use crate::{
     transaction_store::TransactionStore,
     utils::new_sharded_kv_schema_batch,
 };
-use anyhow::{anyhow, bail, ensure, Result};
 use aptos_config::config::{
     PrunerConfig, RocksdbConfig, RocksdbConfigs, StorageDirPaths, NO_OP_STORAGE_PRUNER_CONFIG,
 };
@@ -38,11 +36,13 @@ use aptos_metrics_core::TimerHelper;
 use aptos_schemadb::{ReadOptions, SchemaBatch};
 use aptos_scratchpad::SparseMerkleTree;
 use aptos_storage_interface::{
+    db_ensure as ensure,
+    db_other_bail as bail,
     block_info::{BlockInfo, BlockInfoV0},
     cached_state_view::ShardedStateCache,
     state_delta::StateDelta,
     state_view::DbStateView,
-    DbReader, DbWriter, ExecutedTrees, Order, StateSnapshotReceiver, MAX_REQUEST_LIMIT,
+    DbReader, DbWriter, ExecutedTrees, Order, Result, StateSnapshotReceiver, MAX_REQUEST_LIMIT,
 };
 use aptos_types::{
     account_address::AccountAddress,

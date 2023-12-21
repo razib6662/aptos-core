@@ -11,10 +11,9 @@ use crate::{
     },
     state_store::StateStore,
     transaction_store::TransactionStore,
-    Result,
 };
 use aptos_crypto::hash::HashValue;
-use aptos_storage_interface::{db_ensure as ensure, errors::AptosDbError};
+use aptos_storage_interface::{db_ensure as ensure, AptosDbError, Result};
 use aptos_types::{
     contract_event::ContractEvent,
     ledger_info::LedgerInfoWithSignatures,

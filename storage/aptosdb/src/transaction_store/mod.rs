@@ -16,7 +16,7 @@ use crate::{
 };
 use aptos_crypto::{hash::CryptoHash, HashValue};
 use aptos_schemadb::{ReadOptions, SchemaBatch};
-use aptos_storage_interface::{db_ensure as ensure, errors::AptosDbError};
+use aptos_storage_interface::{db_ensure as ensure, AptosDbError};
 use aptos_types::{
     account_address::AccountAddress,
     proof::position::Position,

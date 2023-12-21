@@ -18,11 +18,11 @@ use crate::{
         get_overall_commit_progress, get_state_kv_commit_progress,
         get_state_merkle_commit_progress,
     },
-    AptosDB, Result,
+    AptosDB,
 };
-use anyhow::Result;
 use aptos_config::config::{RocksdbConfigs, StorageDirPaths};
 use aptos_schemadb::{schema::Schema, ReadOptions, DB};
+use aptos_storage_interface::Result;
 use aptos_types::transaction::Version;
 use clap::Parser;
 use std::path::PathBuf;

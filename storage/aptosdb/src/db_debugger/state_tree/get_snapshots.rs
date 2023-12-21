@@ -4,9 +4,9 @@
 use crate::{
     db_debugger::common::{DbDir, PAGE_SIZE},
     jellyfish_merkle_node::JellyfishMerkleNodeSchema,
-    Result,
 };
 use aptos_jellyfish_merkle::node_type::NodeKey;
+use aptos_storage_interface::Result;
 use aptos_types::transaction::Version;
 use clap::Parser;
 

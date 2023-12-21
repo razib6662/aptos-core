@@ -24,7 +24,7 @@ use aptos_crypto::{
     HashValue,
 };
 use aptos_schemadb::{ReadOptions, SchemaBatch};
-use aptos_storage_interface::{db_ensure as ensure, errors::AptosDbError};
+use aptos_storage_interface::{db_ensure as ensure, AptosDbError};
 use aptos_types::{
     epoch_state::EpochState,
     ledger_info::LedgerInfoWithSignatures,

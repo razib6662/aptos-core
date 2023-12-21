@@ -1,8 +1,8 @@
 // Copyright © Aptos Foundation
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{pruner::db_pruner::DBPruner, Result};
-use aptos_storage_interface::AptosDbError;
+use crate::{pruner::db_pruner::DBPruner};
+use aptos_storage_interface::{AptosDbError, Result};
 use aptos_types::transaction::Version;
 
 /// This module provides `Pruner` which manages a thread pruning old data in the background and is

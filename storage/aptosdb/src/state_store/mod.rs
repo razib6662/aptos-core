@@ -6,7 +6,6 @@
 
 use crate::{
     common::NUM_STATE_SHARDS,
-    errors::AptosDbError,
     ledger_db::LedgerDb,
     ledger_store::LedgerStore,
     metrics::{OTHER_TIMERS_SECONDS, STATE_ITEMS, TOTAL_STATE_BYTES},
@@ -48,6 +47,7 @@ use aptos_logger::info;
 use aptos_schemadb::{ReadOptions, SchemaBatch};
 use aptos_scratchpad::{SmtAncestors, SparseMerkleTree};
 use aptos_storage_interface::{
+    AptosDbError,
     async_proof_fetcher::AsyncProofFetcher,
     cached_state_view::{CachedStateView, ShardedStateCache},
     db_ensure as ensure,

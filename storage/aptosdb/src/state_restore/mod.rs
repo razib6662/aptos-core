@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::metrics::OTHER_TIMERS_SECONDS;
-use anyhow::Result;
+use anyhow::anyhow;
 use aptos_crypto::{hash::CryptoHash, HashValue};
 use aptos_infallible::Mutex;
 use aptos_jellyfish_merkle::{restore::JellyfishMerkleRestore, Key, TreeReader, TreeWriter, Value};
@@ -11,6 +11,7 @@ use aptos_types::{
     proof::SparseMerkleRangeProof, state_store::state_storage_usage::StateStorageUsage,
     transaction::Version,
 };
+use aptos_storage_interface::AptosDbError;
 use once_cell::sync::Lazy;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::{Deserialize, Serialize};

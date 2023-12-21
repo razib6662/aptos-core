@@ -3,10 +3,9 @@
 
 use crate::{
     db_debugger::common::{parse_nibble_path, DbDir},
-    db_ensure as ensure,
     jellyfish_merkle_node::JellyfishMerkleNodeSchema,
-    AptosDbError, Result,
 };
+use aptos_storage_interface::{db_ensure as ensure, AptosDbError, Result};
 use aptos_crypto::HashValue;
 use aptos_jellyfish_merkle::{
     node_type::{Child, Node, NodeKey, NodeType},

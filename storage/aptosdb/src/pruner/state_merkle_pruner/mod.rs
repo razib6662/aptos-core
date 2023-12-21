@@ -25,7 +25,7 @@ use aptos_experimental_runtimes::thread_manager::THREAD_MANAGER;
 use aptos_jellyfish_merkle::{node_type::NodeKey, StaleNodeIndex};
 use aptos_logger::info;
 use aptos_schemadb::{schema::KeyCodec, ReadOptions, DB};
-use aptos_storage_interface::errors::AptosDbError;
+use aptos_storage_interface::AptosDbError;
 use aptos_types::transaction::{AtomicVersion, Version};
 use rayon::prelude::*;
 use std::{

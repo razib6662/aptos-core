@@ -10,7 +10,7 @@ use crate::{
     state_restore::{StateSnapshotRestore, StateSnapshotRestoreMode},
     state_store::StateStore,
     transaction_store::TransactionStore,
-    AptosDB, Result,
+    AptosDB,
 };
 use aptos_crypto::HashValue;
 use aptos_storage_interface::DbReader;

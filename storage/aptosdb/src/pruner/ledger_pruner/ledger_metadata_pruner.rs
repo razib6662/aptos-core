@@ -1,15 +1,13 @@
 // Copyright © Aptos Foundation
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
+use crate::
     schema::{
         db_metadata::{DbMetadataKey, DbMetadataSchema, DbMetadataValue},
         version_data::VersionDataSchema,
-    },
-    Result,
-};
+    };
 use aptos_schemadb::{ReadOptions, SchemaBatch, DB};
-use aptos_storage_interface::errors::AptosDbError;
+use aptos_storage_interface::{AptosDbError, Result};
 use aptos_types::transaction::Version;
 use std::sync::Arc;
 
