@@ -5,7 +5,7 @@
 use crate::AptosDB;
 use anyhow::Result;
 use aptos_schemadb::SchemaBatch;
-use aptos_storage_interface::errors::AptosDbError;
+use aptos_storage_interface::AptosDbError;
 use aptos_types::{
     ledger_info::LedgerInfoWithSignatures,
     proptest_types::{AccountInfoUniverse, LedgerInfoWithSignaturesGen},

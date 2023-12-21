@@ -10,7 +10,7 @@ use crate::{
         ForbiddenError, InternalError, NotFoundError, ServiceUnavailableError, StdApiError,
     },
 };
-use anyhow::{anyhow, format_err, Context as AnyhowContext};
+use anyhow::{anyhow, bail, ensure, format_err, Context as AnyhowContext, Result};
 use aptos_api_types::{
     AptosErrorCode, AsConverter, BcsBlock, GasEstimation, LedgerInfo, ResourceGroup,
     TransactionOnChainData,
@@ -21,9 +21,8 @@ use aptos_gas_schedule::{AptosGasParameters, FromOnChainGasSchedule};
 use aptos_logger::{error, warn};
 use aptos_mempool::{MempoolClientRequest, MempoolClientSender, SubmissionStatus};
 use aptos_storage_interface::{
-    db_ensure, db_other_bail,
     state_view::{DbStateView, DbStateViewAtVersion, LatestDbStateCheckpointView},
-    AptosDbError, DbReader, Order, MAX_REQUEST_LIMIT,
+    DbReader, Order, MAX_REQUEST_LIMIT,
 };
 use aptos_types::{
     access_path::{AccessPath, Path},
@@ -58,7 +57,6 @@ use std::{
     time::Instant,
 };
 
-type Result<T, E = AptosDbError> = std::result::Result<T, E>;
 // Context holds application scope context
 #[derive(Clone)]
 pub struct Context {
@@ -124,7 +122,7 @@ impl Context {
     }
 
     pub fn latest_state_view(&self) -> Result<DbStateView> {
-        self.db.latest_state_checkpoint_view()
+        Ok(self.db.latest_state_checkpoint_view()?)
     }
 
     pub fn latest_state_view_poem<E: InternalError>(
@@ -154,7 +152,7 @@ impl Context {
     }
 
     pub fn state_view_at_version(&self, version: Version) -> Result<DbStateView> {
-        self.db.state_view_at_version(Some(version))
+        Ok(self.db.state_view_at_version(Some(version))?)
     }
 
     pub fn chain_id(&self) -> ChainId {
@@ -177,10 +175,7 @@ impl Context {
         self.node_config.api.max_submit_transaction_batch_size
     }
 
-    pub async fn submit_transaction(
-        &self,
-        txn: SignedTransaction,
-    ) -> anyhow::Result<SubmissionStatus> {
+    pub async fn submit_transaction(&self, txn: SignedTransaction) -> Result<SubmissionStatus> {
         let (req_sender, callback) = oneshot::channel();
         self.mp_sender
             .clone()
@@ -276,7 +271,7 @@ impl Context {
     }
 
     pub fn get_latest_ledger_info_with_signatures(&self) -> Result<LedgerInfoWithSignatures> {
-        self.db.get_latest_ledger_info()
+        Ok(self.db.get_latest_ledger_info()?)
     }
 
     pub fn get_state_value(&self, state_key: &StateKey, version: u64) -> Result<Option<Vec<u8>>> {
@@ -285,7 +280,6 @@ impl Context {
             .state_view_at_version(Some(version))?
             .get_state_value_bytes(state_key)?
             .map(|val| val.to_vec()))
-        .map_err(Into::into)
     }
 
     pub fn get_state_value_poem<E: InternalError>(
@@ -355,12 +349,18 @@ impl Context {
             None,
             version,
         )?;
+
         let kvs = iter
             .by_ref()
             .take(MAX_REQUEST_LIMIT as usize)
+            .map(|e|
+                match e {
+                    Ok((k, v)) => Ok((k, v)),
+                    Err(e) => Err(anyhow::Error::from(e)),
+                })
             .collect::<Result<_>>()?;
         if iter.next().transpose()?.is_some() {
-            db_other_bail!("Too many state items under account ({:?}).", address);
+            bail!("Too many state items under account ({:?}).", address);
         }
         Ok(kvs)
     }
@@ -395,15 +395,15 @@ impl Context {
                                 Some(Ok((struct_tag, v.bytes().to_vec())))
                             }
                             Ok(Path::Code(_)) => None,
-                            Err(e) => Some(Err(AptosDbError::from(e))),
+                            Err(e) => Some(Err(anyhow::Error::from(e))),
                         }
                     }
                     _ => {
                         error!("storage prefix scan return inconsistent key ({:?}) with expected key prefix ({:?}).", k, StateKeyPrefix::from(address));
-                        Some(Err(AptosDbError::Other( format!("storage prefix scan return inconsistent key ({:?})", k ))))
+                        Some(Err(format_err!( "storage prefix scan return inconsistent key ({:?})", k )))
                     }
                 },
-                Err(e) => Some(Err(e)),
+                Err(e) => Some(Err(e.into())),
             })
             .take(limit as usize + 1);
         let kvs = resource_iter
@@ -482,15 +482,15 @@ impl Context {
                         match Path::try_from(path.as_slice()) {
                             Ok(Path::Code(module_id)) => Some(Ok((module_id, v.bytes().to_vec()))),
                             Ok(Path::Resource(_)) | Ok(Path::ResourceGroup(_)) => None,
-                            Err(e) => Some(Err(AptosDbError::from(e))),
+                            Err(e) => Some(Err(anyhow::Error::from(e))),
                         }
                     }
                     _ => {
                         error!("storage prefix scan return inconsistent key ({:?}) with expected key prefix ({:?}).", k, StateKeyPrefix::from(address));
-                        Some(Err(AptosDbError::Other(format!( "storage prefix scan return inconsistent key ({:?})", k ))))
+                        Some(Err(format_err!( "storage prefix scan return inconsistent key ({:?})", k )))
                     }
                 },
-                Err(e) => Some(Err(e)),
+                Err(e) => Some(Err(e.into())),
             })
             .take(limit as usize + 1);
         let kvs = module_iter
@@ -691,7 +691,7 @@ impl Context {
         start_version: u64,
         limit: u16,
         ledger_version: u64,
-    ) -> Result<Vec<TransactionOnChainData>, AptosDbError> {
+    ) -> Result<Vec<TransactionOnChainData>> {
         let data = self
             .db
             .get_transaction_outputs(start_version, limit as u64, ledger_version)?;
@@ -699,7 +699,7 @@ impl Context {
         let txn_start_version = data
             .first_transaction_output_version
             .ok_or_else(|| format_err!("no start version from database"))?;
-        db_ensure!(
+        ensure!(
             txn_start_version == start_version,
             "invalid start version from database: {} != {}",
             txn_start_version,
@@ -709,7 +709,7 @@ impl Context {
         let infos = data.proof.transaction_infos;
         let transactions_and_outputs = data.transactions_and_outputs;
 
-        db_ensure!(
+        ensure!(
             transactions_and_outputs.len() == infos.len(),
             "invalid data size from database: {}, {}",
             transactions_and_outputs.len(),
@@ -774,7 +774,7 @@ impl Context {
         &self,
         hash: HashValue,
         ledger_version: u64,
-    ) -> Result<Option<TransactionOnChainData>, AptosDbError> {
+    ) -> Result<Option<TransactionOnChainData>> {
         self.db
             .get_transaction_by_hash(hash, ledger_version, true)?
             .map(|t| self.convert_into_transaction_on_chain_data(t))
@@ -793,9 +793,7 @@ impl Context {
             .await
             .map_err(anyhow::Error::from)?;
 
-        callback
-            .await
-            .map_err(|e| AptosDbError::Other(e.to_string()))
+        callback.await.map_err(anyhow::Error::from)
     }
 
     pub fn get_transaction_by_version(
@@ -810,14 +808,14 @@ impl Context {
         )?)
     }
 
-    pub fn get_accumulator_root_hash(&self, version: u64) -> Result<HashValue, AptosDbError> {
-        self.db.get_accumulator_root_hash(version)
+    pub fn get_accumulator_root_hash(&self, version: u64) -> Result<HashValue> {
+        Ok(self.db.get_accumulator_root_hash(version)?)
     }
 
     fn convert_into_transaction_on_chain_data(
         &self,
         txn: TransactionWithProof,
-    ) -> Result<TransactionOnChainData, AptosDbError> {
+    ) -> Result<TransactionOnChainData> {
         // the type is Vec<(Transaction, TransactionOutput)> - given we have one transaction here, there should only ever be one value in this array
         let (_, txn_output) = &self
             .db
@@ -833,17 +831,17 @@ impl Context {
         start: Option<u64>,
         limit: u16,
         ledger_version: u64,
-    ) -> Result<Vec<EventWithVersion>, AptosDbError> {
+    ) -> Result<Vec<EventWithVersion>> {
         if let Some(start) = start {
-            self.db.get_events(
+            Ok(self.db.get_events(
                 event_key,
                 start,
                 Order::Ascending,
                 limit as u64,
                 ledger_version,
-            )
+            )?)
         } else {
-            self.db
+            Ok(self.db
                 .get_events(
                     event_key,
                     u64::MAX,
@@ -854,7 +852,7 @@ impl Context {
                 .map(|mut result| {
                     result.reverse();
                     result
-                })
+                })?)
         }
     }
 

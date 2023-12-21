@@ -11,7 +11,7 @@ use crate::{
 };
 use aptos_logger::info;
 use aptos_schemadb::{ReadOptions, SchemaBatch, DB};
-use aptos_storage_interface::{db_ensure as ensure, errors::AptosDbError};
+use aptos_storage_interface::{db_ensure as ensure, errors::AptosDbError, Result};
 use aptos_types::transaction::{Transaction, Version};
 use std::sync::Arc;
 

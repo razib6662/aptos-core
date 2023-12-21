@@ -14,7 +14,7 @@ use aptos_logger::prelude::*;
 use aptos_schemadb::{
     schema::Schema, Options, ReadOptions, SchemaBatch, DB, DEFAULT_COLUMN_FAMILY_NAME,
 };
-use aptos_storage_interface::errors::AptosDbError;
+use aptos_storage_interface::AptosDbError;
 pub use schema::{
     block::BlockSchema,
     dag::{CertifiedNodeSchema, DagVoteSchema, NodeSchema},

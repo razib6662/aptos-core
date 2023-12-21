@@ -9,6 +9,7 @@ use crate::{
 use aptos_logger::info;
 use aptos_schemadb::{SchemaBatch, DB};
 use aptos_types::transaction::Version;
+use aptos_storage_interface::Result;
 use std::sync::Arc;
 
 #[derive(Debug)]

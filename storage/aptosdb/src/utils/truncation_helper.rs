@@ -34,6 +34,7 @@ use aptos_schemadb::{
     schema::{Schema, SeekKeyCodec},
     ReadOptions, SchemaBatch, DB,
 };
+use aptos_storage_interface::Result;
 use aptos_types::{proof::position::Position, transaction::Version};
 use claims::{assert_ge, assert_lt};
 use rayon::prelude::*;

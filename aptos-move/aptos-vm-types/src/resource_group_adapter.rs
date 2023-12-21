@@ -326,14 +326,14 @@ mod tests {
     impl TStateView for MockStateView {
         type Key = StateKey;
 
-        fn get_state_value(&self, state_key: &Self::Key) -> anyhow::Result<Option<StateValue>> {
+        fn get_state_value(&self, state_key: &Self::Key) -> Result<Option<StateValue>, AptosDbError> {
             Ok(self
                 .group
                 .get(state_key)
                 .map(|entry| StateValue::new_legacy(entry.blob.clone().into())))
         }
 
-        fn get_usage(&self) -> anyhow::Result<StateStorageUsage> {
+        fn get_usage(&self) -> Result<StateStorageUsage, AptosDbError> {
             unimplemented!();
         }
     }

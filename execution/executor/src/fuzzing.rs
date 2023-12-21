@@ -123,7 +123,7 @@ impl DbWriter for FakeDb {
         _in_memory_state: StateDelta,
         _block_state_updates: Option<ShardedStateUpdates>,
         _sharded_state_cache: Option<&ShardedStateCache>,
-    ) -> Result<()> {
+    ) -> aptos_storage_interface::Result<()> {
         Ok(())
     }
 }
