@@ -16,6 +16,7 @@ use aptos_types::{
     proof::{definition::NodeInProof, SparseMerkleInternalNode, SparseMerkleLeafNode},
     transaction::Version,
 };
+use aptos_storage_interface::Result;
 use proptest::prelude::*;
 use std::{io::Cursor, panic, rc::Rc};
 
@@ -27,14 +28,14 @@ impl TreeReader<StateKey> for DummyReader {
         &self,
         _node_key: &NodeKey,
         _tag: &str,
-    ) -> anyhow::Result<Option<crate::Node<StateKey>>> {
+    ) -> Result<Option<crate::Node<StateKey>>> {
         unimplemented!()
     }
 
     fn get_rightmost_leaf(
         &self,
         _version: Version,
-    ) -> anyhow::Result<Option<(NodeKey, LeafNode<StateKey>)>> {
+    ) -> Result<Option<(NodeKey, LeafNode<StateKey>)>> {
         unimplemented!()
     }
 }

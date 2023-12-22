@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{db_debugger::ShardingConfig, ledger_db::LedgerDb, state_merkle_db::StateMerkleDb};
-use anyhow::Result;
+use aptos_storage_interface::Result;
 use aptos_config::config::{RocksdbConfigs, StorageDirPaths};
 use aptos_types::nibble::{nibble_path::NibblePath, Nibble};
 use clap::Parser;
@@ -54,10 +54,6 @@ impl AsRef<Path> for DbDir {
 
 pub fn parse_nibble_path(src: &str) -> Result<NibblePath> {
     src.chars()
-        .map(|c| {
-            Ok(Nibble::from(
-                u8::from_str_radix(&c.to_string(), 16).map_err(Into::<ParseIntError>::into)?,
-            ))
-        })
+        .map(|c| Ok(Nibble::from(u8::from_str_radix(&c.to_string(), 16)?)))
         .collect()
 }

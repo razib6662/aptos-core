@@ -1,11 +1,7 @@
 // Copyright © Aptos Foundation
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    db_debugger::common::{DbDir, PAGE_SIZE},
-    jellyfish_merkle_node::JellyfishMerkleNodeSchema,
-};
-use aptos_jellyfish_merkle::node_type::NodeKey;
+use crate::db_debugger::common::{DbDir, PAGE_SIZE};
 use aptos_storage_interface::Result;
 use aptos_types::transaction::Version;
 use clap::Parser;

@@ -263,7 +263,7 @@ impl TResourceGroupView for ResourceGroupAdapter<'_> {
 mod tests {
     use super::*;
     use crate::tests::utils::{mock_tag_0, mock_tag_1, mock_tag_2};
-    use aptos_types::state_store::{
+    use aptos_types::state_store::{errors::AptosDbError,
         state_storage_usage::StateStorageUsage, state_value::StateValue, TStateView,
     };
     use claims::{assert_gt, assert_none, assert_ok_eq, assert_some, assert_some_eq};

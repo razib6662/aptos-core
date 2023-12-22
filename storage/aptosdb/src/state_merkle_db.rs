@@ -117,7 +117,7 @@ impl StateMerkleDb {
         top_levels_batch: SchemaBatch,
         batches_for_shards: Vec<SchemaBatch>,
     ) -> Result<()> {
-        ensure!(batches_for_shards.len() == NUM_STATE_SHARDS);
+        ensure!(batches_for_shards.len() == NUM_STATE_SHARDS, "Shard count mismatch.");
         THREAD_MANAGER.get_io_pool().scope(|s| {
             let mut batches = batches_for_shards.into_iter();
             for shard_id in 0..NUM_STATE_SHARDS {
@@ -139,7 +139,7 @@ impl StateMerkleDb {
         top_level_batch: SchemaBatch,
         batches_for_shards: Vec<SchemaBatch>,
     ) -> Result<()> {
-        ensure!(batches_for_shards.len() == NUM_STATE_SHARDS);
+        ensure!(batches_for_shards.len() == NUM_STATE_SHARDS, "Shard count mismatch.");
         THREAD_MANAGER.get_io_pool().scope(|s| {
             let mut state_merkle_batch = batches_for_shards.into_iter();
             for shard_id in 0..NUM_STATE_SHARDS {

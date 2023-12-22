@@ -36,6 +36,8 @@ use aptos_metrics_core::TimerHelper;
 use aptos_schemadb::{ReadOptions, SchemaBatch};
 use aptos_scratchpad::SparseMerkleTree;
 use aptos_storage_interface::{
+    AptosDbError,
+    db_anyhow as anyhow,
     db_ensure as ensure,
     db_other_bail as bail,
     block_info::{BlockInfo, BlockInfoV0},
@@ -229,7 +231,7 @@ impl AptosDB {
             .ledger_store
             .get_latest_ledger_info_option()
             .map_or(0, |li| li.ledger_info().next_block_epoch());
-        ensure!(genesis_li.ledger_info().epoch() == current_epoch && current_epoch == 0);
+        ensure!(genesis_li.ledger_info().epoch() == current_epoch && current_epoch == 0, "Genesis ledger info epoch is not 0");
         self.ledger_store
             .put_ledger_info(genesis_li, &ledger_batch)?;
 

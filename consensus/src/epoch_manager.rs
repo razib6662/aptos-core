@@ -76,7 +76,6 @@ use aptos_mempool::QuorumStoreRequest;
 use aptos_network::{application::interface::NetworkClient, protocols::network::Event};
 use aptos_safety_rules::SafetyRulesManager;
 use aptos_secure_storage::{KVStorage, Storage};
-use aptos_storage_interface::{AptosDbError, db_ensure};
 use aptos_types::{
     account_address::AccountAddress,
     epoch_change::EpochChangeProof,

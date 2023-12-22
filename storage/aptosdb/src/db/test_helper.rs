@@ -11,7 +11,7 @@ use crate::{
     schema::{jellyfish_merkle_node::JellyfishMerkleNodeSchema, state_value::StateValueSchema},
     AptosDB,
 };
-use anyhow::Result;
+use aptos_storage_interface::Result;
 use aptos_crypto::hash::CryptoHash;
 #[cfg(test)]
 use aptos_crypto::HashValue;

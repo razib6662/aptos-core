@@ -57,7 +57,7 @@ pub use executed_trees::ExecutedTrees;
 pub type Result<T, E = AptosDbError> = std::result::Result<T, E>;
 // This is last line of defense against large queries slipping through external facing interfaces,
 // like the API and State Sync, etc.
-pub const MAX_REQUEST_LIMIT: u64 = 20_000;
+pub const MAX_REQUEST_LIMIT: u64 = 10000;
 
 pub trait StateSnapshotReceiver<K, V>: Send {
     fn add_chunk(&mut self, chunk: Vec<(K, V)>, proof: SparseMerkleRangeProof) -> Result<()>;
@@ -689,6 +689,13 @@ pub fn jmt_update_refs<K>(
 }
 
 #[macro_export]
+macro_rules! db_anyhow {
+    ($($arg:tt)*) => {
+        AptosDbError::Other(format!($($arg)*))
+    };
+}
+
+#[macro_export]
 macro_rules! db_not_found_bail {
     ($($arg:tt)*) => {
         return Err(AptosDbError::NotFound(format!($($arg)*)))
@@ -698,7 +705,7 @@ macro_rules! db_not_found_bail {
 #[macro_export]
 macro_rules! db_other_bail {
     ($($arg:tt)*) => {
-        return Err(AptosDbError::NotFound(format!($($arg)*)))
+        return Err(AptosDbError::Other(format!($($arg)*)))
     };
 }
 

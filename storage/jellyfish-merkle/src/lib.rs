@@ -106,7 +106,6 @@ use std::{
     hash::Hash,
     marker::PhantomData,
 };
-use thiserror::Error;
 type Result<T, E = AptosDbError> = std::result::Result<T, E>;
 
 const MAX_PARALLELIZABLE_DEPTH: usize = 2;
@@ -114,20 +113,6 @@ const MAX_PARALLELIZABLE_DEPTH: usize = 2;
 // Assumes 16 shards here.
 const MIN_LEAF_DEPTH: usize = 1;
 
-#[derive(Error, Debug)]
-#[error("Missing state root node at version {version}, probably pruned.")]
-pub struct MissingRootError {
-    pub version: Version,
-}
-
-impl From<MissingRootError> for AptosDbError {
-    fn from(error: MissingRootError) -> Self {
-        AptosDbError::NotFound(format!(
-            "Missing state root node at version {}.",
-            error.version
-        ))
-    }
-}
 
 /// `TreeReader` defines the interface between
 /// [`JellyfishMerkleTree`](struct.JellyfishMerkleTree.html)
@@ -740,7 +725,7 @@ where
                 .get_node_with_tag(&next_node_key, "get_proof")
                 .map_err(|err| {
                     if nibble_depth == 0 {
-                        MissingRootError { version }.into()
+                        AptosDbError::MissingRootError(version)
                     } else {
                         err
                     }

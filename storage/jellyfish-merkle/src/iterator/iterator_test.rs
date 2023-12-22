@@ -8,7 +8,7 @@ use crate::{
     test_helper::{gen_value, plus_one},
     JellyfishMerkleTree,
 };
-use anyhow::Result;
+use aptos_storage_interface::Result;
 use aptos_crypto::HashValue;
 use aptos_types::transaction::Version;
 use rand::{rngs::StdRng, SeedableRng};

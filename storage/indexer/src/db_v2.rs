@@ -11,12 +11,11 @@ use crate::{
         column_families, indexer_metadata::IndexerMetadataSchema, table_info::TableInfoSchema,
     },
 };
-use anyhow::{bail, Result};
 use aptos_config::config::RocksdbConfig;
 use aptos_logger::info;
 use aptos_rocksdb_options::gen_rocksdb_options;
 use aptos_schemadb::{SchemaBatch, DB};
-use aptos_storage_interface::{state_view::DbStateView, DbReader};
+use aptos_storage_interface::{AptosDbError, db_other_bail as bail, Result, state_view::DbStateView, DbReader};
 use aptos_types::{
     access_path::Path,
     account_address::AccountAddress,
@@ -142,7 +141,7 @@ impl IndexerAsyncV2 {
                     error = ?&err,
                     "[DB] Failed to parse table info"
                 );
-                bail!(err);
+                bail!("{}", err);
             },
         };
         self.db.write_schemas(batch)?;

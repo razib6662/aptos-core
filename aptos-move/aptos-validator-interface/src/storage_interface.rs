@@ -34,7 +34,7 @@ impl DBDebuggerInterface {
                 DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
                 false, /* indexer async v2 */
             )
-            .map_err(Into::into)?,
+            .map_err(|e| anyhow::Error::from(e))?,
         )))
     }
 }
@@ -51,10 +51,9 @@ impl AptosValidatorInterface for DBDebuggerInterface {
             .0
             .get_prefixed_state_value_iterator(&key_prefix, None, version)?;
         let kvs = iter
-            .map(|res| res.map_err(Into::into))
             .by_ref()
-            .take(MAX_REQUEST_LIMIT)
-            .collect::<Result<_>>()?;
+            .take(MAX_REQUEST_LIMIT as usize)
+            .collect::<Result<_>>().map_err(Into::into);
         if iter.next().is_some() {
             bail!(
                 "Too many state items under state key prefix {:?}.",
@@ -84,7 +83,9 @@ impl AptosValidatorInterface for DBDebuggerInterface {
         let txns = txn_iter
             .map(|res| res.map_err(Into::into))
             .collect::<Result<Vec<_>>>()?;
-        let txn_infos = txn_info_iter.collect::<Result<Vec<_>>>()?;
+        let txn_infos = txn_info_iter.map(
+            |res| res.map_err(Into::into),
+        ).collect::<Result<Vec<_>>>()?;
         ensure!(txns.len() == txn_infos.len());
         Ok((txns, txn_infos))
     }
@@ -118,10 +119,12 @@ impl AptosValidatorInterface for DBDebuggerInterface {
         seq: u64,
     ) -> Result<Option<Version>> {
         let ledger_version = self.get_latest_version().await?;
-        Ok(self
+        self
             .0
             .get_account_transaction(account, seq, false, ledger_version)
-            .map_err(Into::into)?
-            .map(|info| info.version))
+            .map_or_else(
+                |e | { Err(anyhow::Error::from(e))},
+                | tp| { Ok(tp.map(|e| e.version)) }
+            )
     }
 }

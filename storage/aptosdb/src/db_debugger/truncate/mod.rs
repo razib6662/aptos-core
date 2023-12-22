@@ -3,7 +3,7 @@
 
 use crate::{
     db::AptosDB,
-    jellyfish_merkle_node::JellyfishMerkleNodeSchema,
+    db_debugger::ShardingConfig,
     schema::{
         db_metadata::{DbMetadataKey, DbMetadataSchema, DbMetadataValue},
         epoch_by_version::EpochByVersionSchema,
@@ -18,7 +18,7 @@ use crate::{
         truncate_state_merkle_db,
     },
 };
-use anyhow::{ensure, Result};
+    use aptos_storage_interface::{AptosDbError, db_ensure as ensure, Result};
 use aptos_config::config::{RocksdbConfigs, StorageDirPaths};
 use aptos_jellyfish_merkle::node_type::NodeKey;
 use aptos_schemadb::{ReadOptions, DB};
